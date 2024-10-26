@@ -3,6 +3,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
+@dataclass
+class Point:
+    x: int
+    y: int
 
 @dataclass
 class Circle:
@@ -11,46 +15,49 @@ class Circle:
     r: int
 
 
-def generate_circles(size: tuple[int, int], points: int) -> list[Circle]:
-    x_centers = sorted(random.choices(range(size[0]), k=points))
-    y_centers = random.choices(range(size[1]), k=points)
+def generate_circles(size: tuple[int, int], num_points: int) -> list[Circle]:
+    centers_x = random.choices(range(size[0]), k=num_points)
+    centers_y = random.choices(range(size[1]), k=num_points)
+
+    points = [Point(x, y) for (x, y) in zip(centers_x, centers_y)]
+    points = sorted(points, key=lambda point: (point.x, point.y))
+
+    borders_x = [np.min([point.x, size[0] - point.x]) for point in points]
+    borders_y = [np.min([point.y, size[1] - point.y]) for point in points]
 
     distances = np.concat(
         [
-            np.full((points, points), np.inf),
-            np.array([[x, y] for (x, y) in zip(x_centers, y_centers)]),
+            np.full((num_points, num_points), np.nan),
+            np.array([[x, y] for (x, y) in zip(borders_x, borders_y)]),
         ],
         axis=1,
     )
 
-    radiuses = np.zeros(points, dtype=int)
-    for i in range(points - 1):
+    radiuses = np.zeros(num_points, dtype=int)
+    for i in range(num_points - 1):
         j = i + 1
 
-        delta = x_centers[j] - x_centers[i]
-        dist_ij = (
-            (x_centers[j] - x_centers[i]) ** 2 + (y_centers[j] - y_centers[i]) ** 2
-        ) ** 0.5
-        distances[i, j] = distances[j, i] = dist_ij
+        delta_x = points[j].x - points[i].x
+        delta_y = points[j].y - points[i].y
 
-        while (dist_ij <= delta) and (j < points):
+        distance = ((delta_x) ** 2 + (delta_y) ** 2) ** 0.5
+        distances[i, j] = distances[j, i] = distance
+
+        delta_next = points[j].x - points[j-1].x
+        while (distance < delta_x or delta_next == 0) and (j < num_points):
             j += 1
-            delta = x_centers[j] - x_centers[i]
-            dist_ij = (
-                (x_centers[j] - x_centers[i]) ** 2 + (y_centers[j] - y_centers[i]) ** 2
-            ) ** 0.5
-            distances[i, j] = distances[j, i] = dist_ij
-        
-        maximal_radius = int(np.min(distances[i, :]))
-        if maximal_radius == 0:
-            radiuses[i] = 0
-        else:
-            radiuses[i] = maximal_radius
-            while j >= 0:
-                distances[j, i] -= radiuses[i]
-                j -= 1
+            delta_x = points[j].x - points[i].x
+            delta_y = points[j].y - points[i].y
+            
+            distance = ((delta_x) ** 2 + (delta_y) ** 2) ** 0.5
+            distances[i, j] = distances[j, i] = distance
+            delta_next = points[j].x - points[j-1].x
 
-    return [Circle(x, y, r) for (x, y, r) in zip(x_centers, y_centers, radiuses)]
 
-if __name__ == "__main__":
-    print(generate_circles((100, 100), 10))
+        maximal_radius = int(np.nanmin(distances[i, :]))
+
+        radiuses[i] = maximal_radius
+        for k in range(j, i, -1):
+            distances[k, i] -= radiuses[i]
+
+    return [Circle(point.x, point.y, r) for (point, r) in zip(points, radiuses)]

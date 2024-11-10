@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
 import numpy as np
+import torch
 from sklearn.neighbors import KDTree
 from torch.utils.data import Dataset
-import torch
 
 
 @dataclass

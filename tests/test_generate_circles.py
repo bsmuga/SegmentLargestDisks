@@ -18,5 +18,5 @@ class TestCircleGenerator(unittest.TestCase):
     def test_dataset(self):
         dataset = CircleDataset((200, 300), 10, 20, 1)
         image, segmentation = dataset[0]
-        assert image.max() == 1
+        assert image.max() == 1.
         assert segmentation.max() == 20

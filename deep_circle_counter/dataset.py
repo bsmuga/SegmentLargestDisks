@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from typing import Iterator
 
 import numpy as np
 import torch
 from sklearn.neighbors import KDTree
-from torch.utils.data import Dataset
+from torch.utils.data import IterableDataset
 
 
 @dataclass
@@ -13,7 +14,7 @@ class Circle:
     r: int
 
 
-class CircleDataset(Dataset):
+class CircleDataset(IterableDataset):
     def __init__(
         self,
         image_size: tuple[int, int],
@@ -27,22 +28,20 @@ class CircleDataset(Dataset):
         self.labels = labels
         self.items = items
 
-    def __getitem__(self, id: int) -> tuple[torch.Tensor, torch.Tensor]:
-        circles = self.generate_circles(self.image_size, self.max_circles)
-        circles = sorted(circles, key=lambda circle: -circle.r)
+    def __iter__(self) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
+        for _ in range(self.items):
+            circles = self.generate_circles(self.image_size, self.max_circles)
+            circles = sorted(circles, key=lambda circle: -circle.r)
 
-        num_all_circles = len(circles)
-        image = self.circles2img(self.image_size, circles, [1] * num_all_circles)
+            num_all_circles = len(circles)
+            image = self.circles2img(self.image_size, circles, [1] * num_all_circles)
 
-        labels = list(
-            range(self.labels, max(-1, self.labels - num_all_circles - 1), -1)
-        )
-        segmentation = self.circles2img(self.image_size, circles, labels)
+            labels = list(
+                range(self.labels, max(-1, self.labels - num_all_circles - 1), -1)
+            )
+            segmentation = self.circles2img(self.image_size, circles, labels)
 
-        return torch.from_numpy(image), torch.from_numpy(segmentation)
-
-    def __len__(self):
-        self.items
+            yield torch.from_numpy(image), torch.from_numpy(segmentation)
 
     @staticmethod
     def generate_circles(size: tuple[int, int], num_points: int) -> list[Circle]:

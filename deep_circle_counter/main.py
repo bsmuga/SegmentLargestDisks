@@ -1,18 +1,33 @@
+from argparse import ArgumentParser
+
+import lightning as L
+from torch.utils.data import DataLoader
+
 from deep_circle_counter.dataset import CircleDataset
-from deep_circle_counter.trainer import Trainer
+from deep_circle_counter.segmentation_model import SegmentationModel
 
 
-def main() -> None:
-    # TODO: build simple CLI
-    # check omegaconf
-    args = ...
+def main(hparams: dict[str, str]) -> None:
+    trainer = L.Trainer()
 
-    dataset = CircleDataset(args.dataset)
-    trainer = Trainer(args.trainer)
+    model = SegmentationModel(**hparams["model"])
 
-    trainer.train()
-    trainer.test()
+    loader_train = DataLoader(CircleDataset(**hparams["dataset_train"]))
+    loader_valid = DataLoader(CircleDataset(**hparams["dataset_valid"]))
+    loader_test = DataLoader(CircleDataset(**hparams["dataset_test"]))
+
+    trainer.fit(
+        model=model, train_dataloaders=loader_train, val_dataloaders=loader_valid
+    )
+    trainer.test(model=model, dataloaders=loader_test)
 
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--dataset_train", default=None)
+    parser.add_argument("--dataset_valid", default=None)
+    parser.add_argument("--dataset_test", default=None)
+    args = parser.parse_args()
+
+    main(args)

@@ -4,13 +4,13 @@ import lightning as L
 from torch.utils.data import DataLoader
 
 from deep_circle_counter.dataset import CircleDataset
-from deep_circle_counter.segmentation_model import SegmentationModel
+from deep_circle_counter.segmentation_module import SegmentationModule
 
 
 def main(hparams: dict[str, str]) -> None:
     trainer = L.Trainer()
 
-    model = SegmentationModel(**hparams["model"])
+    model = SegmentationModule(**hparams["model"])
 
     loader_train = DataLoader(CircleDataset(**hparams["dataset_train"]))
     loader_valid = DataLoader(CircleDataset(**hparams["dataset_valid"]))

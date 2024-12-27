@@ -3,3 +3,4 @@ scikit-learn==1.6.0
 torch==2.5.1
 torchmetrics==1.4.2
 tqdm==4.66.5
+PyYAML==6.0.2

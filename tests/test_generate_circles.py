@@ -1,6 +1,6 @@
 import unittest
 
-from deep_circle_counter.dataset import CircleDataset
+from deep_circle_counter.data.dataset import CircleDataset
 
 
 class TestCircleGenerator(unittest.TestCase):

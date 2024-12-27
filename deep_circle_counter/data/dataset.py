@@ -41,9 +41,9 @@ class CircleDataset(IterableDataset):
             )
             segmentation = self.circles2img(self.image_size, circles, labels)
 
-            yield torch.from_numpy(image).to(torch.float), torch.from_numpy(
+            yield torch.from_numpy(image[None, ...]).to(torch.float), torch.from_numpy(
                 segmentation
-            )
+            ).to(torch.int64)
 
     @staticmethod
     def generate_circles(size: tuple[int, int], num_points: int) -> list[Circle]:

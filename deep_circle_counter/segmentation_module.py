@@ -7,11 +7,11 @@ import torch.nn.functional as F
 class SegmentationModule(L.LightningModule):
     def __init__(
         self,
-        arch: str = "Unet",
-        encoder_name: str = "resnet34",
-        encoder_weights: str | None = None,
-        in_channels: int = 1,
-        classes: int = 1,
+        arch: str,
+        encoder_name: str,
+        encoder_weights: str | None,
+        in_channels: int,
+        classes: int,
     ) -> None:
         super().__init__()
         self.model = smp.create_model(

@@ -1,33 +1,29 @@
-from argparse import ArgumentParser
+import argparse
 
 import lightning as L
-from torch.utils.data import DataLoader
+import yaml
 
-from deep_circle_counter.dataset import CircleDataset
+from deep_circle_counter.data import CircleDataModule
 from deep_circle_counter.segmentation_module import SegmentationModule
 
 
-def main(hparams: dict[str, str]) -> None:
-    trainer = L.Trainer()
-
+def main(hparams: dict[str, str | int | list]) -> None:
     model = SegmentationModule(**hparams["model"])
+    data = CircleDataModule(**hparams["data"])
 
-    loader_train = DataLoader(CircleDataset(**hparams["dataset_train"]))
-    loader_valid = DataLoader(CircleDataset(**hparams["dataset_valid"]))
-    loader_test = DataLoader(CircleDataset(**hparams["dataset_test"]))
-
-    trainer.fit(
-        model=model, train_dataloaders=loader_train, val_dataloaders=loader_valid
-    )
-    trainer.test(model=model, dataloaders=loader_test)
+    trainer = L.Trainer()
+    trainer.fit(model=model, datamodule=data)
+    trainer.test(datamodule=data)
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("--model", default=None)
-    parser.add_argument("--dataset_train", default=None)
-    parser.add_argument("--dataset_valid", default=None)
-    parser.add_argument("--dataset_test", default=None)
+    parser = argparse.ArgumentParser(
+        description="Command-line interface for training a model."
+    )
+    parser.add_argument("--config", type=str, help="Path to configuration yaml.")
     args = parser.parse_args()
 
-    main(args)
+    with open(args.config, "r") as f:
+        config = yaml.safe_load(f)
+
+    main(config)

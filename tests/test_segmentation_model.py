@@ -10,7 +10,13 @@ class TestLoops(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         classes = 3
-        cls.segmentation_module = SegmentationModule(classes=classes)
+        cls.segmentation_module = SegmentationModule(
+            arch="unet",
+            encoder_name="resnet34",
+            encoder_weights=None,
+            in_channels=1,
+            classes=classes,
+        )
         cls.batch = (
             torch.randint(0, classes, (3, 1, 32, 32), dtype=torch.float),
             torch.randint(0, classes, (3, 32, 32)),

@@ -66,7 +66,8 @@ class CircleDataset(IterableDataset):
 
             indices, distances = tree.query_radius(
                 [centers[i, :]],
-                r=((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
+                r=2 * ((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
+                # factor 2 to eliminate circles collisions
                 return_distance=True,
             )
 

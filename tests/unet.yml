@@ -12,6 +12,9 @@ data:
   valid_items: 2
   test_items: 2
   batch_size: 1
-  num_workers: 0
+  num_workers: 10
+logger:
+  experiment_name: test
+  tracking_uri: file:/tmp/logs
 
 

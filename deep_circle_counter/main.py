@@ -2,6 +2,8 @@ import argparse
 
 import lightning as L
 import yaml
+from lightning.pytorch.loggers import MLFlowLogger
+
 
 from deep_circle_counter.data import CircleDataModule
 from deep_circle_counter.segmentation_module import SegmentationModule
@@ -10,8 +12,9 @@ from deep_circle_counter.segmentation_module import SegmentationModule
 def main(hparams: dict[str, str | int | list]) -> None:
     model = SegmentationModule(**hparams["model"])
     data = CircleDataModule(**hparams["data"])
+    logger = MLFlowLogger(**hparams["logger"])
 
-    trainer = L.Trainer()
+    trainer = L.Trainer(logger=logger)
     trainer.fit(model=model, datamodule=data)
     trainer.test(datamodule=data)
 

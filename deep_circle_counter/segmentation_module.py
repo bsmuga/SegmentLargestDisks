@@ -35,7 +35,7 @@ class SegmentationModule(L.LightningModule):
         image, segmentation = batch
         segmentation = torch.permute(
             F.one_hot(segmentation, self.classes), (0, 3, 1, 2)
-        )
+        ).to(float)
         val_loss = F.mse_loss(self.model(image), segmentation)
         self.log("val_loss", val_loss)
 

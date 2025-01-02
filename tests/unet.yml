@@ -12,6 +12,6 @@ data:
   valid_items: 2
   test_items: 2
   batch_size: 1
-  num_workers: 10
+  num_workers: 0
 
 

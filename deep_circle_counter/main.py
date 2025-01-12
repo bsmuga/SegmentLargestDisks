@@ -14,7 +14,7 @@ def main(hparams: dict[str, str | int | list]) -> None:
     data = CircleDataModule(**hparams["data"])
     logger = MLFlowLogger(**hparams["logger"])
 
-    trainer = L.Trainer(logger=logger)
+    trainer = L.Trainer(**hparams["trainer"], logger=logger)
     trainer.fit(model=model, datamodule=data)
     trainer.test(datamodule=data)
 

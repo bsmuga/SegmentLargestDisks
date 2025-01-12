@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from typing import Iterator
 
 import numpy as np
 import torch
 from sklearn.neighbors import KDTree
-from torch.utils.data import IterableDataset
+from torch.utils.data import Dataset
 
 
 @dataclass
@@ -14,7 +13,7 @@ class Circle:
     r: int
 
 
-class CircleDataset(IterableDataset):
+class CircleDataset(Dataset):
     def __init__(
         self,
         image_size: tuple[int, int],
@@ -28,22 +27,21 @@ class CircleDataset(IterableDataset):
         self.labels = labels
         self.items = items
 
-    def __iter__(self) -> Iterator[tuple[torch.Tensor, torch.Tensor]]:
-        for _ in range(self.items):
-            circles = self.generate_circles(self.image_size, self.max_circles)
-            circles = sorted(circles, key=lambda circle: -circle.r)
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        circles = self.generate_circles(self.image_size, self.max_circles)
+        circles = sorted(circles, key=lambda circle: -circle.r)
+        num_all_circles = len(circles)
+        image = self.circles2img(self.image_size, circles, [1] * num_all_circles)
+        labels = list(
+            range(self.labels, max(-1, self.labels - num_all_circles - 1), -1)
+        )
+        segmentation = self.circles2img(self.image_size, circles, labels)
+        return torch.from_numpy(image[None, ...]).to(torch.float), torch.from_numpy(
+            segmentation
+        ).to(torch.int64)
 
-            num_all_circles = len(circles)
-            image = self.circles2img(self.image_size, circles, [1] * num_all_circles)
-
-            labels = list(
-                range(self.labels, max(-1, self.labels - num_all_circles - 1), -1)
-            )
-            segmentation = self.circles2img(self.image_size, circles, labels)
-
-            yield torch.from_numpy(image[None, ...]).to(torch.float), torch.from_numpy(
-                segmentation
-            ).to(torch.int64)
+    def __len__(self) -> int:
+        return self.items
 
     @staticmethod
     def generate_circles(size: tuple[int, int], num_points: int) -> list[Circle]:

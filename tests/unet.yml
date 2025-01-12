@@ -1,5 +1,5 @@
 trainer:
-  accelerator: auto
+  accelerator: cuda
   max_epochs: 2
   min_epochs: 1
 model:

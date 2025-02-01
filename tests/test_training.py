@@ -4,13 +4,13 @@ import torch
 import yaml
 
 
-from deep_circle_counter.main import main
+from src.main import main
 
 
 class TestTraining(unittest.TestCase):
 
     @unittest.skipIf(torch.cuda.is_available() is False, "No cuda device to test")
-    def test_main(self):
-        with open("tests/unet.yml", "r") as f:
+    def test_main(self) -> None:
+        with open("tests/unet.yml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
         main(config)

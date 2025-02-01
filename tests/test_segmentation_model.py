@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from deep_circle_counter.segmentation_module import SegmentationModule
+from src.segmentation_module import SegmentationModule
 
 
 class TestLoops(unittest.TestCase):

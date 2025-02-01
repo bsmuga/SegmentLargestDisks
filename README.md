@@ -1,2 +1,2 @@
-# deep-circle-count
-Count circles with neural nets.
+# Segment the largest disks
+The goal of this small project is to train a neural network that segments only a selected number of the largest disks in synthetically generated images, while recognizing the order from the largest to the smallest segment.

@@ -1,15 +1,15 @@
 import lightning as L
 from torch.utils.data import DataLoader
 
-from deep_circle_counter.data.dataset import CircleDataset
+from src.data.dataset import DisksDataset
 
 
-class CircleDataModule(L.LightningDataModule):
+class DiskDataModule(L.LightningDataModule):
     def __init__(
         self,
         image_size: tuple[int, int],
-        circles_max_num: int,
-        labels: int,
+        disk_max_num: int,
+        labeled_disks: int,
         train_items: int,
         valid_items: int,
         test_items: int,
@@ -18,8 +18,8 @@ class CircleDataModule(L.LightningDataModule):
     ) -> None:
         super().__init__()
         self.image_size = image_size
-        self.circles_max_num = circles_max_num
-        self.labels = labels
+        self.disk_max_num = disk_max_num
+        self.labeled_disks = labeled_disks
         self.train_items = train_items
         self.valid_items = valid_items
         self.test_items = test_items
@@ -27,14 +27,14 @@ class CircleDataModule(L.LightningDataModule):
         self.num_workers = num_workers
 
     def setup(self, stage: str) -> None:
-        self.ds_train = CircleDataset(
-            self.image_size, self.circles_max_num, self.labels, self.train_items
+        self.ds_train = DisksDataset(
+            self.image_size, self.disk_max_num, self.labeled_disks, self.train_items
         )
-        self.ds_valid = CircleDataset(
-            self.image_size, self.circles_max_num, self.labels, self.valid_items
+        self.ds_valid = DisksDataset(
+            self.image_size, self.disk_max_num, self.labeled_disks, self.valid_items
         )
-        self.ds_test = CircleDataset(
-            self.image_size, self.circles_max_num, self.labels, self.test_items
+        self.ds_test = DisksDataset(
+            self.image_size, self.disk_max_num, self.labeled_disks, self.test_items
         )
 
     def train_dataloader(self) -> DataLoader:

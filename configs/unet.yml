@@ -11,8 +11,8 @@ model:
   classes: 4
 data:
   image_size: [320, 224]
-  circles_max_num: 10
-  labels: 3
+  disk_max_num: 10
+  labeled_disks: 3
   train_items: 100
   valid_items: 10
   test_items: 10

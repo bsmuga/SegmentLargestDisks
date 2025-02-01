@@ -5,20 +5,18 @@ from torchmetrics import Metric
 from torchmetrics.utilities.data import dim_zero_cat, to_onehot
 
 
-class ClassificationMetric(Metric):
+class ConfusionMatrix(Metric):
     def __init__(
         self,
         metric: Literal["precision", "recall"],
         threshold_iou: float,
         num_classes: int,
-        average: Literal["micro", "macro"] | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.metric = metric
         self.threshold_iou = threshold_iou
         self.num_classes = num_classes
-        self.mean = mean
         self.add_state("tp", default=[], dist_reduce_fx="cat")
         self.add_state("fp", default=[], dist_reduce_fx="cat")
         self.add_state("fn", default=[], dist_reduce_fx="cat")

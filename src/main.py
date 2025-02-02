@@ -3,8 +3,6 @@ import argparse
 import lightning as L
 import yaml
 from lightning.pytorch.loggers import MLFlowLogger
-
-
 from src.data import DiskDataModule
 from src.segmentation_module import SegmentationModule
 

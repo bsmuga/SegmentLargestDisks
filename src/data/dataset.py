@@ -14,6 +14,23 @@ class Disk:
 
 
 class DisksDataset(Dataset):
+    """Class that generate synthetic dataset
+    with images with non overlapping disks.
+
+    Parameters
+    ----------
+    image_size : tuple[int, int]
+        size of the image
+    disk_max_num : int
+        maximal number of disks present in image
+        not necessary maximum number is achieved
+    labeled_disks : int
+        Number of segmented disks, where the disks
+        are segmented from largest to smallest
+    items : int
+        Number of images.
+    """
+
     def __init__(
         self,
         image_size: tuple[int, int],

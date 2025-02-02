@@ -28,9 +28,12 @@ class SegmentationModule(L.LightningModule):
         image, segmentation = batch
         preds = self.model(image)
 
-        loss = F.mse_loss(preds, torch.permute(
-            F.one_hot(segmentation, self.classes), (0, 3, 1, 2)
-        ).to(torch.float32))
+        loss = F.mse_loss(
+            preds,
+            torch.permute(F.one_hot(segmentation, self.classes), (0, 3, 1, 2)).to(
+                torch.float32
+            ),
+        )
         self.log("train_loss", loss)
 
         with torch.no_grad():
@@ -44,9 +47,12 @@ class SegmentationModule(L.LightningModule):
         image, segmentation = batch
         preds = self.model(image)
 
-        val_loss = F.mse_loss(preds, torch.permute(
-            F.one_hot(segmentation, self.classes), (0, 3, 1, 2)
-        ).to(torch.float32))
+        val_loss = F.mse_loss(
+            preds,
+            torch.permute(F.one_hot(segmentation, self.classes), (0, 3, 1, 2)).to(
+                torch.float32
+            ),
+        )
         self.log("val_loss", val_loss)
 
         with torch.no_grad():
@@ -57,9 +63,12 @@ class SegmentationModule(L.LightningModule):
         self, batch: tuple[torch.Tensor, torch.Tensor], batch_idx: int
     ) -> torch.Tensor:
         image, segmentation = batch
-        test_loss = F.mse_loss(self.model(image), torch.permute(
-            F.one_hot(segmentation, self.classes), (0, 3, 1, 2)
-        ).to(torch.float32))
+        test_loss = F.mse_loss(
+            self.model(image),
+            torch.permute(F.one_hot(segmentation, self.classes), (0, 3, 1, 2)).to(
+                torch.float32
+            ),
+        )
         self.log("test_loss", test_loss)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:

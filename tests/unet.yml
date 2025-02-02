@@ -1,5 +1,5 @@
 trainer:
-  accelerator: cuda
+  accelerator: auto
   max_epochs: 2
   min_epochs: 1
 model:
@@ -10,8 +10,8 @@ model:
   classes: 4
 data:
   image_size: [320, 224]
-  circles_max_num: 20
-  labels: 3
+  disk_max_num: 20
+  labeled_disks: 3
   train_items: 3
   valid_items: 2
   test_items: 2

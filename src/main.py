@@ -3,15 +3,13 @@ import argparse
 import lightning as L
 import yaml
 from lightning.pytorch.loggers import MLFlowLogger
-
-
-from deep_circle_counter.data import CircleDataModule
-from deep_circle_counter.segmentation_module import SegmentationModule
+from src.data import DiskDataModule
+from src.segmentation_module import SegmentationModule
 
 
 def main(hparams: dict[str, str | int | list]) -> None:
     model = SegmentationModule(**hparams["model"])
-    data = CircleDataModule(**hparams["data"])
+    data = DiskDataModule(**hparams["data"])
     logger = MLFlowLogger(**hparams["logger"])
 
     trainer = L.Trainer(**hparams["trainer"], logger=logger)
@@ -26,7 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, help="Path to configuration yaml.")
     args = parser.parse_args()
 
-    with open(args.config, "r") as f:
+    with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     main(config)

@@ -7,35 +7,52 @@ from torch.utils.data import Dataset
 
 
 @dataclass
-class Circle:
+class Disk:
     x: int
     y: int
     r: int
 
 
-class CircleDataset(Dataset):
+class DisksDataset(Dataset):
+    """Class that generate synthetic dataset
+    with images with non overlapping disks.
+
+    Parameters
+    ----------
+    image_size : tuple[int, int]
+        size of the image
+    disk_max_num : int
+        maximal number of disks present in image
+        not necessary maximum number is achieved
+    labeled_disks : int
+        Number of segmented disks, where the disks
+        are segmented from largest to smallest
+    items : int
+        Number of images.
+    """
+
     def __init__(
         self,
         image_size: tuple[int, int],
-        circles_max_num: int,
-        labels: int,
+        disk_max_num: int,
+        labeled_disks: int,
         items: int,
     ) -> None:
         super().__init__()
         self.image_size = image_size
-        self.max_circles = circles_max_num
-        self.labels = labels
+        self.disk_max_num = disk_max_num
+        self.labeled_disks = labeled_disks
         self.items = items
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
-        circles = self.generate_circles(self.image_size, self.max_circles)
-        circles = sorted(circles, key=lambda circle: -circle.r)
-        num_all_circles = len(circles)
-        image = self.circles2img(self.image_size, circles, [1] * num_all_circles)
+        disks = self.generate_disks(self.image_size, self.disk_max_num)
+        disks = sorted(disks, key=lambda disk: -disk.r)
+        disc_num = len(disks)
+        image = self.disks2img(self.image_size, disks, [1] * disc_num)
         labels = list(
-            range(self.labels, max(-1, self.labels - num_all_circles - 1), -1)
+            range(self.labeled_disks, max(-1, self.labeled_disks - disc_num - 1), -1)
         )
-        segmentation = self.circles2img(self.image_size, circles, labels)
+        segmentation = self.disks2img(self.image_size, disks, labels)
         return torch.from_numpy(image[None, ...]).to(torch.float), torch.from_numpy(
             segmentation
         ).to(torch.int64)
@@ -44,7 +61,7 @@ class CircleDataset(Dataset):
         return self.items
 
     @staticmethod
-    def generate_circles(size: tuple[int, int], num_points: int) -> list[Circle]:
+    def generate_disks(size: tuple[int, int], num_points: int) -> list[Disk]:
         rng = np.random.default_rng()
         centers = np.asarray(
             [
@@ -65,7 +82,7 @@ class CircleDataset(Dataset):
             indices, distances = tree.query_radius(
                 [centers[i, :]],
                 r=2 * ((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
-                # factor 2 to eliminate circles collisions
+                # factor 2 to eliminate disks collisions
                 return_distance=True,
             )
 
@@ -74,7 +91,7 @@ class CircleDataset(Dataset):
                     lazy_pairwise_distances[i, index] = distance
                     lazy_pairwise_distances[index, i] = distance
 
-        circles = list()
+        disks = list()
         for i, center in enumerate(centers):
             r = np.nanmin(
                 [
@@ -88,18 +105,18 @@ class CircleDataset(Dataset):
             lazy_pairwise_distances[:, i] -= r
             r = np.floor(r)
             if r > 0:
-                circles.append(Circle(center[0], center[1], np.floor(r)))
-        return circles
+                disks.append(Disk(center[0], center[1], np.floor(r)))
+        return disks
 
     @staticmethod
-    def circles2img(
-        size: tuple[int, int], circles: list[Circle], per_circle_values: list[int]
+    def disks2img(
+        size: tuple[int, int], disks: list[Disk], per_disk_values: list[int]
     ) -> np.ndarray:
         image = np.zeros(size).T
         xx, yy = np.meshgrid(range(size[0]), range(size[1]), indexing="ij")
 
-        for circle, value in zip(circles, per_circle_values):
+        for disk, value in zip(disks, per_disk_values):
             for x, y in zip(xx.flatten(), yy.flatten()):
-                if (x - circle.x) ** 2 + (y - circle.y) ** 2 < circle.r**2:
+                if (x - disk.x) ** 2 + (y - disk.y) ** 2 < disk.r**2:
                     image[y, x] += value
         return image

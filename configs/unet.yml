@@ -1,8 +1,8 @@
 trainer:
   accelerator: cuda
-  max_epochs: 50
-  min_epochs: 10
-  check_val_every_n_epoch: 5
+  max_epochs: 5
+  check_val_every_n_epoch: 10
+  log_every_n_steps: 5
 model:
   arch: unet
   encoder_name: resnet18
@@ -17,8 +17,8 @@ data:
   valid_items: 10
   test_items: 10
   batch_size: 4
-  num_workers: 10
+  num_workers: 3
 logger:
   experiment_name: deep_circle_counter
-  log_model: false
+  log_model: true
   tracking_uri: file:/tmp/logs

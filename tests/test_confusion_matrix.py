@@ -63,7 +63,7 @@ class TestConfusionMatric(unittest.TestCase):
     def test_if_batch_works(self):
         self.confusion_matrix.update(self.preds, self.target)
         self.confusion_matrix.update(self.preds, self.target)
-        result = self.confusion_matrix.compute()
+        result = torch.clone(self.confusion_matrix.compute())
 
         batched_result = self.confusion_matrix(
             torch.concat([self.preds, self.preds]),

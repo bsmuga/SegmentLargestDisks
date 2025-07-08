@@ -10,7 +10,6 @@ class TestDisksDataset(unittest.TestCase):
 
     # Original tests from test_generate_disks.py
     def test_generate_disks_non_overlapping(self):
-        """Test that generated disks don't overlap (original test)"""
         disks = DisksDataset.generate_disks((200, 300), 5)
 
         for i in range(len(disks) - 1):
@@ -27,7 +26,6 @@ class TestDisksDataset(unittest.TestCase):
                 )
 
     def test_dataset_basic(self):
-        """Test basic dataset functionality (original test)"""
         dataset = DisksDataset((200, 300), 10, 3, 1)
         image, segmentation = next(iter(dataset))
         self.assertLessEqual(image.max(), 1.0)  # Should be 1.0 or 0.0 if no disks
@@ -36,7 +34,6 @@ class TestDisksDataset(unittest.TestCase):
 
     # New comprehensive tests for fixes
     def test_reproducibility_with_seed(self):
-        """Test that dataset generates same data with same seed"""
         seed = 42
         ds1 = DisksDataset((100, 100), 5, 3, 10, seed=seed)
         ds2 = DisksDataset((100, 100), 5, 3, 10, seed=seed)
@@ -50,7 +47,6 @@ class TestDisksDataset(unittest.TestCase):
             torch.testing.assert_close(seg1, seg2)
 
     def test_different_results_without_seed(self):
-        """Test that dataset generates different data without seed"""
         ds1 = DisksDataset((100, 100), 5, 3, 10)
         ds2 = DisksDataset((100, 100), 5, 3, 10)
 
@@ -86,7 +82,6 @@ class TestDisksDataset(unittest.TestCase):
         self.assertTrue(all(label >= 0 for label in unique_labels))
 
     def test_disk_rendering_efficiency(self):
-        """Test that optimized disk rendering is faster than pixel-by-pixel"""
         # Test with larger image to see performance difference
         size = (400, 300)
         disks = [
@@ -110,7 +105,6 @@ class TestDisksDataset(unittest.TestCase):
         self.assertTrue(np.all(img >= 0))
 
     def test_no_duplicate_floor_operation(self):
-        """Test that floor operation is not duplicated"""
         rng = np.random.default_rng(42)
         disks = DisksDataset.generate_disks((100, 100), 5, rng)
 
@@ -119,7 +113,6 @@ class TestDisksDataset(unittest.TestCase):
             self.assertEqual(disk.r, int(disk.r))
 
     def test_disk_non_overlapping_comprehensive(self):
-        """Test that generated disks don't overlap using image values"""
         ds = DisksDataset((200, 200), 10, 5, 1, seed=42)
         img, seg = ds[0]
 
@@ -131,7 +124,6 @@ class TestDisksDataset(unittest.TestCase):
         self.assertTrue(np.all(img_np <= 1), "Disks should not overlap")
 
     def test_segmentation_mask_consistency(self):
-        """Test that segmentation mask matches the disk positions"""
         ds = DisksDataset((150, 150), 5, 3, 1, seed=42)
         img, seg = ds[0]
 

@@ -119,20 +119,25 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
 
 
 if __name__ == "__main__":
+    import os
+    
+    # Create images directory if it doesn't exist
+    os.makedirs('images', exist_ok=True)
+    
     # Generate all visualizations
     print("Generating disk visualization...")
     fig1 = plot_disks((300, 200), 8)
-    fig1.savefig('disk_generation.png', dpi=300, bbox_inches='tight')
+    fig1.savefig('images/disk_generation.png', dpi=300, bbox_inches='tight')
     
     print("Generating segmentation example...")
     fig2 = plot_segmentation_example()
-    fig2.savefig('segmentation_example.png', dpi=300, bbox_inches='tight')
+    fig2.savefig('images/segmentation_example.png', dpi=300, bbox_inches='tight')
     
     print("Generating reproducibility comparison...")
     fig3 = plot_reproducibility_comparison()
-    fig3.savefig('reproducibility_comparison.png', dpi=300, bbox_inches='tight')
+    fig3.savefig('images/reproducibility_comparison.png', dpi=300, bbox_inches='tight')
     
-    print("All visualizations saved!")
+    print("All visualizations saved to images/ directory!")
     
     # Show the plots
     plt.show()

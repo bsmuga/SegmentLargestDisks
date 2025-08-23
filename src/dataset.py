@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
-import torch
 from sklearn.neighbors import KDTree
-from torch.utils.data import Dataset
 
 
 @dataclass
@@ -13,7 +11,7 @@ class Disk:
     r: int
 
 
-class DisksDataset(Dataset):
+class DisksDataset:
     """Class that generate synthetic dataset
     with images with non overlapping disks.
 
@@ -41,14 +39,13 @@ class DisksDataset(Dataset):
         items: int,
         seed: int = None,
     ) -> None:
-        super().__init__()
         self.image_size = image_size
         self.disk_max_num = disk_max_num
         self.labeled_disks = labeled_disks
         self.items = items
         self.seed = seed
 
-    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> tuple[np.ndarray, np.ndarray]:
         # Use seed if provided for reproducibility
         if self.seed is not None:
             rng = np.random.default_rng(self.seed + idx)
@@ -69,9 +66,7 @@ class DisksDataset(Dataset):
                 labels.append(0)  # Background/unlabeled
 
         segmentation = self.disks2img(self.image_size, disks, labels)
-        return torch.from_numpy(image[None, ...]).to(torch.float), torch.from_numpy(
-            segmentation
-        ).to(torch.int64)
+        return image[None, ...].astype(np.float32), segmentation.astype(np.int64)
 
     def __len__(self) -> int:
         return self.items

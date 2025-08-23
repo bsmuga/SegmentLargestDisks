@@ -29,7 +29,7 @@ def plot_segmentation_example(size: tuple[int, int] = (300, 200),
     dataset = DisksDataset(size, max_disks, labeled_disks, 1, seed=seed)
     image, segmentation = dataset[0]
     
-    # Convert to numpy
+    # Convert to numpy (already numpy arrays now)
     image_np = image.squeeze()
     seg_np = segmentation
     
@@ -104,7 +104,7 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[1, 1].set_title('Without seed (Run 2)')
     axes[1, 1].axis('off')
     
-    # Check if different
+    # Check if different  
     different = not np.array_equal(img3, img4)
     axes[1, 2].text(0.5, 0.5, f'Different: {different}', 
                    ha='center', va='center', fontsize=16,

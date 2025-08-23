@@ -30,8 +30,8 @@ def plot_segmentation_example(size: tuple[int, int] = (300, 200),
     image, segmentation = dataset[0]
     
     # Convert to numpy
-    image_np = image.squeeze().numpy()
-    seg_np = segmentation.numpy()
+    image_np = image.squeeze()
+    seg_np = segmentation
     
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     
@@ -80,7 +80,7 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[0, 1].axis('off')
     
     # Check if identical
-    identical = np.array_equal(img1.numpy(), img2.numpy())
+    identical = np.array_equal(img1, img2)
     axes[0, 2].text(0.5, 0.5, f'Identical: {identical}', 
                    ha='center', va='center', fontsize=16,
                    bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen" if identical else "lightcoral"))
@@ -105,7 +105,7 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[1, 1].axis('off')
     
     # Check if different
-    different = not np.array_equal(img3.numpy(), img4.numpy())
+    different = not np.array_equal(img3, img4)
     axes[1, 2].text(0.5, 0.5, f'Different: {different}', 
                    ha='center', va='center', fontsize=16,
                    bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen" if different else "lightcoral"))

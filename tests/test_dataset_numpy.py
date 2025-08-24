@@ -7,7 +7,7 @@ class TestDisksDatasetNumpy(unittest.TestCase):
     """Comprehensive tests for DisksDataset using numpy"""
 
     def test_generate_disks_non_overlapping(self):
-        disks = DisksDataset.generate_disks((200, 300), 5)
+        disks = DisksDataset._generate_disks((200, 300), 5)
 
         for i in range(len(disks) - 1):
             for j in range(i + 1, len(disks)):

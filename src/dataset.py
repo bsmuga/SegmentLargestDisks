@@ -21,10 +21,10 @@ class DisksDataset:
         size of the image
     disk_max_num : int
         maximal number of disks present in image
-        not necessary maximum number is achieved
+        not necessary maximum number has to be present
     labeled_disks : int
         Number of segmented disks, where the disks
-        are segmented from largest to smallest
+        are segmented by label from largest to smallest
     items : int
         Number of images.
     seed : int, optional
@@ -46,57 +46,56 @@ class DisksDataset:
         self.seed = seed
 
     def __getitem__(self, idx: int) -> tuple[np.ndarray, np.ndarray]:
-        # Use seed if provided for reproducibility
         if self.seed is not None:
             rng = np.random.default_rng(self.seed + idx)
         else:
             rng = np.random.default_rng()
 
         disks = self.generate_disks(self.image_size, self.disk_max_num, rng)
-        disks = sorted(disks, key=lambda disk: -disk.r)
+        disks = sorted(disks, key=lambda disk: disk.r, reverse=True)
         disc_num = len(disks)
         image = self.disks2img(self.image_size, disks, [1] * disc_num)
 
-        # Generate labels: 1 to labeled_disks for the largest disks, 0 for others
         labels = []
         for i in range(disc_num):
             if i < self.labeled_disks:
-                labels.append(i + 1)  # Labels 1, 2, 3, ... for largest disks
+                labels.append(i + 1)
             else:
-                labels.append(0)  # Background/unlabeled
+                labels.append(0)
 
         segmentation = self.disks2img(self.image_size, disks, labels)
-        return image[None, ...].astype(np.float32), segmentation.astype(np.int64)
+        return image, segmentation
 
     def __len__(self) -> int:
         return self.items
 
     @staticmethod
     def generate_disks(
-        size: tuple[int, int], num_points: int, rng: np.random.Generator = None
+        size: tuple[int, int], num_points: int, rng: np.random.Generator
     ) -> list[Disk]:
-        if rng is None:
-            rng = np.random.default_rng()
         centers = np.asarray(
             [
                 [x, y]
                 for (x, y) in zip(
-                    sorted(rng.integers(0, size[0], num_points)),
+                    rng.integers(0, size[0], num_points),
                     rng.integers(0, size[1], num_points),
                 )
             ]
         )
+        centers = np.unique(centers, axis=0)
+        centers = centers[np.argsort(centers[:, 0])]
 
-        lazy_pairwise_distances = np.full((num_points, num_points), np.nan)
+        disks_num = len(centers)
+        lazy_pairwise_distances = np.full((disks_num, disks_num), np.nan)
+        
         tree = KDTree(centers, leaf_size=2)
-        for i in range(num_points - 1):
+        for i in range(disks_num - 1):
             delta_x = centers[i][0] - centers[i + 1][0]
             delta_y = centers[i][1] - centers[i + 1][1]
 
             indices, distances = tree.query_radius(
                 [centers[i, :]],
-                r=2 * ((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
-                # factor 2 to eliminate disks collisions
+                r=((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
                 return_distance=True,
             )
 
@@ -128,13 +127,10 @@ class DisksDataset:
     ) -> np.ndarray:
         image = np.zeros((size[1], size[0]))
 
-        # Create coordinate grids once
-        y_grid, x_grid = np.ogrid[: size[1], : size[0]]
+        y_grid, x_grid = np.ogrid[:size[1], :size[0]]
 
         for disk, value in zip(disks, per_disk_values):
-            # Create a mask for the current disk using broadcasting
             mask = (x_grid - disk.x) ** 2 + (y_grid - disk.y) ** 2 < disk.r**2
-            # Apply the value where mask is True
             image[mask] = value
 
         return image

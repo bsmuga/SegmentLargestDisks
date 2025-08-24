@@ -1,15 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.data.dataset import DisksDataset
+from dataset import DisksDataset
 
 
 def plot_disks(size: tuple[int, int], num_points: int) -> plt.Figure:
     """Generate and plot disks using optimized rendering"""
     disks = DisksDataset.generate_disks(size, num_points)
     
-    # Use optimized rendering from the dataset
-    values = [1] * len(disks)  # All disks have value 1
+    values = [1] * len(disks)
     image = DisksDataset.disks2img(size, disks, values)
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -29,24 +28,20 @@ def plot_segmentation_example(size: tuple[int, int] = (300, 200),
     dataset = DisksDataset(size, max_disks, labeled_disks, 1, seed=seed)
     image, segmentation = dataset[0]
     
-    # Convert to numpy (already numpy arrays now)
     image_np = image.squeeze()
     seg_np = segmentation
     
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     
-    # Original image
     axes[0].imshow(image_np, cmap='gray')
     axes[0].set_title('Generated Image')
     axes[0].axis('off')
     
-    # Segmentation
     im1 = axes[1].imshow(seg_np, cmap='tab10', vmin=0, vmax=labeled_disks)
     axes[1].set_title(f'Segmentation (0=bg, 1-{labeled_disks}=largest)')
     axes[1].axis('off')
     plt.colorbar(im1, ax=axes[1], ticks=list(range(labeled_disks + 1)))
     
-    # Overlay
     axes[2].imshow(image_np, cmap='gray', alpha=0.7)
     masked_seg = np.ma.masked_where(seg_np == 0, seg_np)
     axes[2].imshow(masked_seg, cmap='tab10', alpha=0.6, vmin=0, vmax=labeled_disks)
@@ -79,7 +74,6 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[0, 1].set_title('With seed=42 (Run 2)')
     axes[0, 1].axis('off')
     
-    # Check if identical
     identical = np.array_equal(img1, img2)
     axes[0, 2].text(0.5, 0.5, f'Identical: {identical}', 
                    ha='center', va='center', fontsize=16,
@@ -89,7 +83,6 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[0, 2].axis('off')
     axes[0, 2].set_title('Reproducibility Check')
     
-    # Without seed - should be different
     ds3 = DisksDataset(size, max_disks, labeled_disks, 1)
     ds4 = DisksDataset(size, max_disks, labeled_disks, 1)
     
@@ -104,8 +97,7 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[1, 1].set_title('Without seed (Run 2)')
     axes[1, 1].axis('off')
     
-    # Check if different  
-    different = not np.array_equal(img3, img4)
+    different = not np.array_equal(img3.numpy(), img4.numpy())
     axes[1, 2].text(0.5, 0.5, f'Different: {different}', 
                    ha='center', va='center', fontsize=16,
                    bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen" if different else "lightcoral"))

@@ -39,6 +39,15 @@ class DisksDataset:
         items: int,
         seed: int = None,
     ) -> None:
+        """Initializes the DisksDataset.
+
+        Args:
+            image_size (tuple[int, int]): The size (width, height) of the images.
+            disk_max_num (int): The maximum number of disks to attempt to place.
+            labeled_disks (int): The number of largest disks to label in the segmentation.
+            items (int): The total number of image-segmentation pairs in the dataset.
+            seed (int, optional): A random seed for reproducibility. Defaults to None.
+        """
         self.image_size = image_size
         self.disk_max_num = disk_max_num
         self.labeled_disks = labeled_disks
@@ -46,6 +55,17 @@ class DisksDataset:
         self.seed = seed
 
     def __getitem__(self, idx: int) -> tuple[np.ndarray, np.ndarray]:
+        """Generates a single data sample, an image and its segmentation mask.
+
+        Args:
+            idx (int): The index of the item to generate.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: A tuple containing two arrays:
+                - The binary image with all generated disks drawn on it.
+                - The segmentation mask, where the N largest disks are labeled
+                  from 1 to N, and other disks are labeled 0.
+        """
         if self.seed is not None:
             rng = np.random.default_rng(self.seed + idx)
         else:
@@ -67,12 +87,33 @@ class DisksDataset:
         return image, segmentation
 
     def __len__(self) -> int:
+        """Returns the total number of items in the dataset.
+
+        Returns:
+            int: The total number of items specified during initialization.
+        """
         return self.items
 
     @staticmethod
     def generate_disks(
         size: tuple[int, int], num_points: int, rng: np.random.Generator
     ) -> list[Disk]:
+        """Generates a list of non-overlapping disks for a given image size.
+
+        This method uses a greedy approach. It first generates a number of
+        random candidate center points. It then iterates through these points,
+        calculating the maximum possible radius for a disk at that center
+        such that it does not collide with the image boundaries or other
+        nearby disks. A random radius up to this maximum is chosen.
+
+        Args:
+            size (tuple[int, int]): The (width, height) of the canvas.
+            num_points (int): The number of candidate center points to generate.
+            rng (np.random.Generator): The random number generator to use.
+
+        Returns:
+            list[Disk]: A list of the generated Disk objects.
+        """
         centers = np.asarray(
             [
                 [x, y]
@@ -84,47 +125,76 @@ class DisksDataset:
         )
         centers = np.unique(centers, axis=0)
         centers = centers[np.argsort(centers[:, 0])]
+        distances = DisksDataset._compute_distance_to_nearest_neighboours(centers)
 
-        disks_num = len(centers)
-        lazy_pairwise_distances = np.full((disks_num, disks_num), np.nan)
-        
-        tree = KDTree(centers, leaf_size=2)
-        for i in range(disks_num - 1):
-            delta_x = centers[i][0] - centers[i + 1][0]
-            delta_y = centers[i][1] - centers[i + 1][1]
-
-            indices, distances = tree.query_radius(
-                [centers[i, :]],
-                r=((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
-                return_distance=True,
-            )
-
-            for index, distance in zip(indices[0], distances[0]):
-                if i != index:
-                    lazy_pairwise_distances[i, index] = distance
-                    lazy_pairwise_distances[index, i] = distance
-
-        disks = list()
+        disks: list[Disk] = list()
         for i, center in enumerate(centers):
-            r = np.nanmin(
+            r_max = np.nanmin(
                 [
-                    *lazy_pairwise_distances[i, :],
+                    *distances[i, :],
                     center[0],
                     center[1],
                     size[0] - center[0],
                     size[1] - center[1],
                 ]
             )
-            lazy_pairwise_distances[:, i] -= r
-            r = np.floor(r)
-            if r > 0:
+            if r_max > 1:
+                r = np.random.randint(1, np.floor(r_max) + 1)
                 disks.append(Disk(center[0], center[1], r))
         return disks
+
+    @staticmethod
+    def _compute_distance_to_nearest_neighboours(points: np.ndarray) -> np.ndarray:
+        """Computes a sparse distance matrix for a set of points.
+
+        Uses a KDTree to find all neighbors for each point within a dynamic
+        radius. The radius is determined by the distance to the next point
+        in the array, which assumes the points are sorted.
+
+        Args:
+            points (np.ndarray): A 2D array of shape (N, 2) containing the
+                x, y coordinates of N points.
+
+        Returns:
+            np.ndarray: An (N, N) array where array[i, j] contains the
+                Euclidean distance between point i and point j if they are
+                close neighbors, and np.nan otherwise.
+        """
+        disks_num = len(points)
+        distances = np.full((disks_num, disks_num), np.nan)
+        
+        tree = KDTree(points, leaf_size=2)
+        for i in range(disks_num - 1):
+            delta_x = points[i][0] - points[i + 1][0]
+            delta_y = points[i][1] - points[i + 1][1]
+
+            indices, distances_vec = tree.query_radius(
+                [points[i, :]],
+                r=((delta_x) ** 2 + (delta_y) ** 2) ** 0.5,
+                return_distance=True,
+            )
+
+            for index, distance in zip(indices[0], distances_vec[0]):
+                if i != index:
+                    distances[i, index] = distance
+                    distances[index, i] = distance
+        return distances
 
     @staticmethod
     def disks2img(
         size: tuple[int, int], disks: list[Disk], per_disk_values: list[int]
     ) -> np.ndarray:
+        """Renders a list of disks onto a 2D numpy array.
+
+        Args:
+            size (tuple[int, int]): The (width, height) of the image to create.
+            disks (list[Disk]): The disks to draw on the image.
+            per_disk_values (list[int]): The pixel value to use for each
+                corresponding disk in the list.
+
+        Returns:
+            np.ndarray: A 2D array representing the image with disks drawn on it.
+        """
         image = np.zeros((size[1], size[0]))
 
         y_grid, x_grid = np.ogrid[:size[1], :size[0]]

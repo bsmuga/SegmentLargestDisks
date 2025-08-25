@@ -139,8 +139,10 @@ class DisksDataset:
                 ]
             )
             if r_max > 1:
-                r = np.random.randint(1, np.floor(r_max) + 1)
+                r = rng.integers(1, int(np.floor(r_max)) + 1)
                 disks.append(Disk(center[0], center[1], r))
+                distances[:, i] -= r
+                distances[i, :] -= r
         return disks
 
     @staticmethod

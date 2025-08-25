@@ -1,12 +1,20 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 import matplotlib.pyplot as plt
 import numpy as np
 
-from dataset import DisksDataset
+from src.dataset import DisksDataset
 
 
-def plot_disks(size: tuple[int, int], num_points: int) -> plt.Figure:
+def plot_disks(size: tuple[int, int], num_points: int, seed: int = None) -> plt.Figure:
     """Generate and plot disks using optimized rendering"""
-    disks = DisksDataset.generate_disks(size, num_points)
+    # Create random generator
+    rng = np.random.default_rng(seed) if seed is not None else np.random.default_rng()
+    
+    # Generate disks using the static method
+    disks = DisksDataset.generate_disks(size, num_points, rng)
     
     values = [1] * len(disks)
     image = DisksDataset.disks2img(size, disks, values)
@@ -97,7 +105,7 @@ def plot_reproducibility_comparison(size: tuple[int, int] = (200, 150),
     axes[1, 1].set_title('Without seed (Run 2)')
     axes[1, 1].axis('off')
     
-    different = not np.array_equal(img3.numpy(), img4.numpy())
+    different = not np.array_equal(img3, img4)
     axes[1, 2].text(0.5, 0.5, f'Different: {different}', 
                    ha='center', va='center', fontsize=16,
                    bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen" if different else "lightcoral"))

@@ -1,1 +1,7 @@
 numpy>=1.21.0
+pandas
+matplotlib
+jax[cpu]
+flax
+optax
+orbax-checkpoint

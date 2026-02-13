@@ -156,7 +156,7 @@ def main():
 
     checkpointer = ocp.StandardCheckpointer()
     _, state = nnx.split(model)
-    ckpt_path = "/home/bartek/projects/SegmentLargestDisks/checkpoints/unet"
+    ckpt_path = "./checkpoints/unet"
     checkpointer.save(ckpt_path, state)
     print(f"Checkpoint saved to {ckpt_path}")
 

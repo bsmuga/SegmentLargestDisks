@@ -12,8 +12,11 @@ from flax import nnx
 from tqdm import tqdm
 
 from dataset import make_dataset
+from logger import get_logger
 from model import UNet
 from train import compute_iou, dice_loss
+
+log = get_logger("evaluate")
 
 NUM_CLASSES = 6
 IMAGE_SIZE = (256, 256)
@@ -125,7 +128,7 @@ def plot_predictions(
 
     fig.tight_layout()
     fig.savefig(save_path, dpi=150)
-    print(f"Saved {save_path}")
+    log.info(f"Saved {save_path}")
     plt.close(fig)
 
 
@@ -142,37 +145,37 @@ def main():
     parser.add_argument("--save-path", default="evaluation.png", help="Path for visualization output")
     args = parser.parse_args()
 
-    print("Loading model...")
+    log.info("Loading model...")
     model = load_model(args.checkpoint)
 
-    print("Generating evaluation dataset...")
+    log.info("Generating evaluation dataset...")
     images, masks = make_dataset(
         num_samples=args.num_samples,
         image_size=IMAGE_SIZE,
         seed=args.seed,
     )
-    print(f"Eval set: {images.shape[0]} samples")
+    log.info(f"Eval set: {images.shape[0]} samples")
 
-    print("Running evaluation...")
+    log.info("Running evaluation...")
     metrics = evaluate(model, images, masks)
 
-    print(f"\n{'─' * 50}")
-    print(f"  Dice loss:       {metrics['dice_loss']:.4f}")
-    print(f"  Pixel accuracy:  {metrics['pixel_accuracy']:.4f}")
-    print(f"  mIoU:            {metrics['miou']:.4f}")
-    print(f"{'─' * 50}")
-    print("  Per-class breakdown:")
+    log.info(f"{'─' * 50}")
+    log.info(f"  Dice loss:       {metrics['dice_loss']:.4f}")
+    log.info(f"  Pixel accuracy:  {metrics['pixel_accuracy']:.4f}")
+    log.info(f"  mIoU:            {metrics['miou']:.4f}")
+    log.info(f"{'─' * 50}")
+    log.info("  Per-class breakdown:")
     class_names = ["background"] + [f"label {i}" for i in range(1, NUM_CLASSES)]
     for i, name in enumerate(class_names):
         iou = metrics["per_class_iou"][i]
         acc = metrics["per_class_accuracy"][i]
         iou_str = f"{iou:.4f}" if not np.isnan(iou) else "  N/A "
         acc_str = f"{acc:.4f}" if not np.isnan(acc) else "  N/A "
-        print(f"    {name:>12s}  IoU={iou_str}  Acc={acc_str}")
-    print(f"{'─' * 50}")
+        log.info(f"    {name:>12s}  IoU={iou_str}  Acc={acc_str}")
+    log.info(f"{'─' * 50}")
 
     if args.plot > 0:
-        print(f"\nPlotting {args.plot} samples...")
+        log.info(f"Plotting {args.plot} samples...")
         plot_predictions(model, images, masks, num_samples=args.plot, save_path=args.save_path)
 
 

@@ -7,7 +7,10 @@ import optax
 from tqdm import tqdm
 
 from dataset import make_dataset, batched_iterator
+from logger import get_logger
 from model import UNet
+
+log = get_logger("train")
 
 # ── Hyperparameters ──────────────────────────────────────────────────────────
 NUM_SAMPLES = 200
@@ -80,7 +83,7 @@ def eval_step(model, images):
 
 
 def main():
-    print("Generating dataset...")
+    log.info("Generating dataset...")
     images, masks = make_dataset(
         num_samples=NUM_SAMPLES,
         num_circles=NUM_CIRCLES,
@@ -89,13 +92,13 @@ def main():
         max_labels=MAX_LABELS,
         seed=0,
     )
-    print(f"Dataset: images {images.shape}, masks {masks.shape}")
+    log.info(f"Dataset: images {images.shape}, masks {masks.shape}")
 
     # Split into train/val (80/20)
     n_train = int(0.8 * NUM_SAMPLES)
     train_images, val_images = images[:n_train], images[n_train:]
     train_masks, val_masks = masks[:n_train], masks[n_train:]
-    print(f"Train: {len(train_images)}, Val: {len(val_images)}")
+    log.info(f"Train: {len(train_images)}, Val: {len(val_images)}")
 
     # Initialize model and optimizer
     rngs = nnx.Rngs(SEED)
@@ -105,7 +108,7 @@ def main():
     # Verify shapes with a dummy forward pass
     dummy = jnp.zeros((1, IMAGE_SIZE[1], IMAGE_SIZE[0], 1))
     out = model(dummy)
-    print(f"Model output shape: {out.shape} (expected (1, {IMAGE_SIZE[1]}, {IMAGE_SIZE[0]}, {NUM_CLASSES}))")
+    log.info(f"Model output shape: {out.shape} (expected (1, {IMAGE_SIZE[1]}, {IMAGE_SIZE[0]}, {NUM_CLASSES}))")
 
     rng = jax.random.key(SEED)
 
@@ -145,12 +148,14 @@ def main():
         miou = float(jnp.nanmean(mean_ious))
 
         per_class = ", ".join(f"c{i}={float(mean_ious[i]):.3f}" for i in range(NUM_CLASSES))
-        tqdm.write(
+        msg = (
             f"Epoch {epoch:3d}/{NUM_EPOCHS} | "
             f"train_loss={avg_train_loss:.4f} | "
             f"val_loss={avg_val_loss:.4f} | "
             f"mIoU={miou:.4f} [{per_class}]"
         )
+        tqdm.write(msg)
+        log.info(msg)
 
     # ── Save checkpoint ─────────────────────────────────────────────────
     import orbax.checkpoint as ocp
@@ -159,7 +164,7 @@ def main():
     _, state = nnx.split(model)
     ckpt_path = "./checkpoints/unet"
     checkpointer.save(ckpt_path, state)
-    print(f"Checkpoint saved to {ckpt_path}")
+    log.info(f"Checkpoint saved to {ckpt_path}")
 
 
 if __name__ == "__main__":

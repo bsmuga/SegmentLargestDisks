@@ -4,6 +4,7 @@ import jax
 import jax.numpy as jnp
 from flax import nnx
 import optax
+from tqdm import tqdm
 
 from dataset import make_dataset, batched_iterator
 from model import UNet
@@ -108,7 +109,7 @@ def main():
 
     rng = jax.random.key(SEED)
 
-    for epoch in range(1, NUM_EPOCHS + 1):
+    for epoch in tqdm(range(1, NUM_EPOCHS + 1), desc="Epochs"):
         # ── Training ────────────────────────────────────────────────────
         model.train()
         rng, epoch_rng = jax.random.split(rng)
@@ -144,7 +145,7 @@ def main():
         miou = float(jnp.nanmean(mean_ious))
 
         per_class = ", ".join(f"c{i}={float(mean_ious[i]):.3f}" for i in range(NUM_CLASSES))
-        print(
+        tqdm.write(
             f"Epoch {epoch:3d}/{NUM_EPOCHS} | "
             f"train_loss={avg_train_loss:.4f} | "
             f"val_loss={avg_val_loss:.4f} | "

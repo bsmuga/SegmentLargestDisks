@@ -5,3 +5,4 @@ jax[cuda12]
 flax
 optax
 orbax-checkpoint
+tqdm

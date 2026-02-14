@@ -5,3 +5,4 @@ jax
 flax
 optax
 orbax-checkpoint
+tqdm

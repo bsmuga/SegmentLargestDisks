@@ -9,6 +9,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 import orbax.checkpoint as ocp
 from flax import nnx
+from tqdm import tqdm
 
 from dataset import make_dataset
 from model import UNet
@@ -56,7 +57,7 @@ def evaluate(model: UNet, images: np.ndarray, masks: np.ndarray) -> dict:
     # Process in batches of 8 to avoid OOM
     batch_size = 8
     n_batches = 0
-    for start in range(0, len(images), batch_size):
+    for start in tqdm(range(0, len(images), batch_size), desc="Evaluating"):
         end = min(start + batch_size, len(images))
         batch_imgs = jnp.array(images[start:end])
         batch_masks = jnp.array(masks[start:end])

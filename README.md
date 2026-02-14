@@ -28,7 +28,13 @@ the network recovers that ordering.
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+
+# Auto-detect CUDA and install the right JAX variant:
+./install.sh
+
+# Or install manually:
+pip install -r requirements-cuda.txt   # GPU (CUDA 12)
+pip install -r requirements-cpu.txt    # CPU only
 ```
 
 Generate sample data and preview:
@@ -65,4 +71,6 @@ tests/             # unit tests for generate_data.py
 ## Requirements
 
 - Python >= 3.14
-- JAX, Flax, Optax (see `requirements.txt`)
+- JAX, Flax, Optax
+- **GPU**: `requirements-cuda.txt` installs `jax[cuda12]`
+- **CPU**: `requirements-cpu.txt` installs `jax[cpu]`

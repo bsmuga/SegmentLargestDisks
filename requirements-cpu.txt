@@ -1,7 +1,7 @@
 numpy>=1.21.0
 pandas
 matplotlib
-jax[cuda12]
+jax[cpu]
 flax
 optax
 orbax-checkpoint

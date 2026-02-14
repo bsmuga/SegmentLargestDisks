@@ -6,7 +6,7 @@ import optax
 import pytest
 from flax import nnx
 
-from model import UNet
+from models import UNet
 from train import compute_iou, dice_loss, eval_step, train_step
 
 # Use small spatial size (64x64) for fast tests

@@ -1,7 +1,7 @@
 """Training script for UNet segmentation of largest disks."""
 
 import os
-
+from typing import Literal
 os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.80"
 
 import jax
@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from dataset import make_dataset, batched_iterator
 from logger import get_logger
-from model import UNet
+from models import create_model
 
 log = get_logger("train")
 
@@ -28,6 +28,7 @@ BATCH_SIZE = 1
 LEARNING_RATE = 1e-3
 NUM_EPOCHS = 100
 SEED = 42
+MODEL_NAME: Literal["unet", "vit"] = "vit"
 
 
 def dice_loss(logits: jnp.ndarray, labels: jnp.ndarray, num_classes: int, smooth: float = 1.0) -> jnp.ndarray:
@@ -106,7 +107,7 @@ def main():
 
     # Initialize model and optimizer
     rngs = nnx.Rngs(SEED)
-    model = UNet(num_classes=NUM_CLASSES, rngs=rngs)
+    model = create_model(MODEL_NAME, num_classes=NUM_CLASSES, rngs=rngs)
     optimizer = nnx.Optimizer(model, optax.adam(LEARNING_RATE), wrt=nnx.Param)
 
     # Verify shapes with a dummy forward pass
@@ -165,7 +166,7 @@ def main():
     import orbax.checkpoint as ocp
 
     _, state = nnx.split(model)
-    ckpt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checkpoints", "unet")
+    ckpt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checkpoints", MODEL_NAME)
     with ocp.StandardCheckpointer() as checkpointer:
         checkpointer.save(ckpt_path, state)
     log.info(f"Checkpoint saved to {ckpt_path}")

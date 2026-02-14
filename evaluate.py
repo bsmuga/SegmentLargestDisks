@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from dataset import make_dataset
 from logger import get_logger
-from model import UNet
+from models import create_model
 from train import compute_iou, dice_loss
 
 log = get_logger("evaluate")
@@ -26,9 +26,9 @@ LABEL_CMAP = mcolors.ListedColormap(
 LABEL_NORM = mcolors.BoundaryNorm(range(NUM_CLASSES + 1), NUM_CLASSES)
 
 
-def load_model(checkpoint_path: str) -> UNet:
-    """Load a UNet model from an orbax checkpoint."""
-    model = UNet(num_classes=NUM_CLASSES, rngs=nnx.Rngs(0))
+def load_model(checkpoint_path: str, model_name: str = "unet") -> nnx.Module:
+    """Load a model from an orbax checkpoint."""
+    model = create_model(model_name, num_classes=NUM_CLASSES, rngs=nnx.Rngs(0))
     graphdef, state = nnx.split(model)
     checkpointer = ocp.StandardCheckpointer()
     state = checkpointer.restore(checkpoint_path, target=state)
@@ -37,7 +37,7 @@ def load_model(checkpoint_path: str) -> UNet:
     return model
 
 
-def evaluate(model: UNet, images: np.ndarray, masks: np.ndarray) -> dict:
+def evaluate(model: nnx.Module, images: np.ndarray, masks: np.ndarray) -> dict:
     """Run evaluation over an entire dataset.
 
     Returns
@@ -95,7 +95,7 @@ def evaluate(model: UNet, images: np.ndarray, masks: np.ndarray) -> dict:
 
 
 def plot_predictions(
-    model: UNet,
+    model: nnx.Module,
     images: np.ndarray,
     masks: np.ndarray,
     num_samples: int = 4,
@@ -132,20 +132,26 @@ def plot_predictions(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate UNet segmentation model")
+    parser = argparse.ArgumentParser(description="Evaluate segmentation model")
+    parser.add_argument("--model", default="unet", choices=["unet", "vit"], help="Model architecture")
     parser.add_argument(
         "--checkpoint",
-        default="checkpoints/unet",
-        help="Path to orbax checkpoint directory",
+        default=None,
+        help="Path to orbax checkpoint directory (default: checkpoints/<model>)",
     )
     parser.add_argument("--num-samples", type=int, default=25, help="Number of eval samples to generate")
     parser.add_argument("--seed", type=int, default=999, help="Seed for eval data (different from training)")
     parser.add_argument("--plot", type=int, default=4, help="Number of samples to visualize (0 to skip)")
-    parser.add_argument("--save-path", default="evaluation.png", help="Path for visualization output")
+    parser.add_argument("--save-path", default=None, help="Path for visualization output (default: evaluation_<model>.png)")
     args = parser.parse_args()
 
+    if args.checkpoint is None:
+        args.checkpoint = f"checkpoints/{args.model}"
+    if args.save_path is None:
+        args.save_path = f"evaluation_{args.model}.png"
+
     log.info("Loading model...")
-    model = load_model(args.checkpoint)
+    model = load_model(args.checkpoint, model_name=args.model)
 
     log.info("Generating evaluation dataset...")
     images, masks = make_dataset(

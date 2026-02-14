@@ -1,6 +1,9 @@
 """Training script for UNet segmentation of largest disks."""
 
 import os
+
+os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.80"
+
 import jax
 import jax.numpy as jnp
 from flax import nnx
@@ -21,7 +24,7 @@ NUM_LABELED = 25
 MAX_LABELS = 5
 NUM_CLASSES = MAX_LABELS + 1  # 0=background + 1..5 labels
 
-BATCH_SIZE = 2
+BATCH_SIZE = 1
 LEARNING_RATE = 1e-3
 NUM_EPOCHS = 100
 SEED = 42

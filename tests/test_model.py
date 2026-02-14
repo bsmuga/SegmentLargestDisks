@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pytest
 from flax import nnx
 
-from model import DoubleConv, DecoderBlock, EncoderBlock, UNet
+from models import DoubleConv, DecoderBlock, EncoderBlock, UNet, create_model, MODELS
 
 RNGS = nnx.Rngs(0)
 
@@ -129,3 +129,26 @@ class TestUNet:
         assert isinstance(model.dec1, DecoderBlock)
         assert isinstance(model.dec4, DecoderBlock)
         assert isinstance(model.head, nnx.Conv)
+
+
+class TestCreateModel:
+    def test_create_unet(self):
+        model = create_model("unet", num_classes=6, rngs=RNGS)
+        assert isinstance(model, UNet)
+
+    def test_create_vit(self):
+        from models import ViT
+        model = create_model("vit", num_classes=6, rngs=RNGS)
+        assert isinstance(model, ViT)
+
+    def test_case_insensitive(self):
+        model = create_model("UNet", num_classes=6, rngs=RNGS)
+        assert isinstance(model, UNet)
+
+    def test_unknown_model_raises(self):
+        with pytest.raises(ValueError, match="Unknown model"):
+            create_model("resnet", num_classes=6, rngs=RNGS)
+
+    def test_models_registry_has_expected_keys(self):
+        assert "unet" in MODELS
+        assert "vit" in MODELS

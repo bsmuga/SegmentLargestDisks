@@ -2,7 +2,6 @@
 
 import argparse
 
-import jax
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -19,7 +18,7 @@ from train import compute_iou, dice_loss
 log = get_logger("evaluate")
 
 NUM_CLASSES = 6
-IMAGE_SIZE = (256, 256)
+IMAGE_SIZE = (128, 128)
 
 LABEL_CMAP = mcolors.ListedColormap(
     ["black", "red", "orange", "green", "purple", "cyan"]
@@ -58,7 +57,7 @@ def evaluate(model: UNet, images: np.ndarray, masks: np.ndarray) -> dict:
     class_total = np.zeros(NUM_CLASSES, dtype=np.int64)
 
     # Process in batches of 8 to avoid OOM
-    batch_size = 8
+    batch_size = 4
     n_batches = 0
     for start in tqdm(range(0, len(images), batch_size), desc="Evaluating"):
         end = min(start + batch_size, len(images))
@@ -139,7 +138,7 @@ def main():
         default="checkpoints/unet",
         help="Path to orbax checkpoint directory",
     )
-    parser.add_argument("--num-samples", type=int, default=50, help="Number of eval samples to generate")
+    parser.add_argument("--num-samples", type=int, default=25, help="Number of eval samples to generate")
     parser.add_argument("--seed", type=int, default=999, help="Seed for eval data (different from training)")
     parser.add_argument("--plot", type=int, default=4, help="Number of samples to visualize (0 to skip)")
     parser.add_argument("--save-path", default="evaluation.png", help="Path for visualization output")

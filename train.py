@@ -1,5 +1,6 @@
 """Training script for UNet segmentation of largest disks."""
 
+import os
 import jax
 import jax.numpy as jnp
 from flax import nnx
@@ -13,16 +14,16 @@ from model import UNet
 log = get_logger("train")
 
 # ── Hyperparameters ──────────────────────────────────────────────────────────
-NUM_SAMPLES = 200
+NUM_SAMPLES = 1_000
 NUM_CIRCLES = 30
-IMAGE_SIZE = (256, 256)
+IMAGE_SIZE = (128, 128)
 NUM_LABELED = 25
 MAX_LABELS = 5
 NUM_CLASSES = MAX_LABELS + 1  # 0=background + 1..5 labels
 
-BATCH_SIZE = 8
+BATCH_SIZE = 2
 LEARNING_RATE = 1e-3
-NUM_EPOCHS = 20
+NUM_EPOCHS = 100
 SEED = 42
 
 
@@ -160,10 +161,10 @@ def main():
     # ── Save checkpoint ─────────────────────────────────────────────────
     import orbax.checkpoint as ocp
 
-    checkpointer = ocp.StandardCheckpointer()
     _, state = nnx.split(model)
-    ckpt_path = "./checkpoints/unet"
-    checkpointer.save(ckpt_path, state)
+    ckpt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checkpoints", "unet")
+    with ocp.StandardCheckpointer() as checkpointer:
+        checkpointer.save(ckpt_path, state)
     log.info(f"Checkpoint saved to {ckpt_path}")
 
 

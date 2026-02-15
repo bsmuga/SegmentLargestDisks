@@ -1,14 +1,18 @@
 """Training script for UNet segmentation of largest disks."""
 
+import csv
 import os
 from typing import Literal
 os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.80"
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 from flax import nnx
 import optax
 from tqdm import tqdm
+
+import orbax.checkpoint as ocp
 
 from dataset import make_dataset, batched_iterator
 from logger import get_logger
@@ -17,7 +21,7 @@ from models import create_model
 log = get_logger("train")
 
 # ── Hyperparameters ──────────────────────────────────────────────────────────
-NUM_SAMPLES = 1_000
+NUM_SAMPLES = 5000
 NUM_CIRCLES = 30
 IMAGE_SIZE = (128, 128)
 NUM_LABELED = 25
@@ -116,6 +120,7 @@ def main():
     log.info(f"Model output shape: {out.shape} (expected (1, {IMAGE_SIZE[1]}, {IMAGE_SIZE[0]}, {NUM_CLASSES}))")
 
     rng = jax.random.key(SEED)
+    history: list[dict] = []
 
     for epoch in tqdm(range(1, NUM_EPOCHS + 1), desc="Epochs"):
         # ── Training ────────────────────────────────────────────────────
@@ -162,14 +167,66 @@ def main():
         tqdm.write(msg)
         log.info(msg)
 
-    # ── Save checkpoint ─────────────────────────────────────────────────
-    import orbax.checkpoint as ocp
+        row = {"epoch": epoch, "train_loss": avg_train_loss, "val_loss": avg_val_loss, "miou": miou}
+        for i in range(NUM_CLASSES):
+            row[f"iou_c{i}"] = float(mean_ious[i])
+        history.append(row)
 
+        # ── Periodic checkpoint every 20 epochs ─────────────────────────
+        if epoch % 20 == 0:
+            _, state = nnx.split(model)
+            ckpt_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "checkpoints", MODEL_NAME, f"epoch_{epoch}",
+            )
+            with ocp.StandardCheckpointer() as checkpointer:
+                checkpointer.save(ckpt_path, state)
+            log.info(f"Checkpoint saved to {ckpt_path}")
+
+    # ── Save metrics CSV ─────────────────────────────────────────────────
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    logs_dir = os.path.join(base_dir, "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    csv_path = os.path.join(logs_dir, f"{MODEL_NAME}_metrics.csv")
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=history[0].keys())
+        writer.writeheader()
+        writer.writerows(history)
+    log.info(f"Metrics saved to {csv_path}")
+
+    # ── Plot training curves ─────────────────────────────────────────────
+    epochs = [r["epoch"] for r in history]
+    fig, (ax_loss, ax_iou) = plt.subplots(1, 2, figsize=(14, 5))
+
+    ax_loss.plot(epochs, [r["train_loss"] for r in history], label="train_loss")
+    ax_loss.plot(epochs, [r["val_loss"] for r in history], label="val_loss")
+    ax_loss.set_xlabel("Epoch")
+    ax_loss.set_ylabel("Dice Loss")
+    ax_loss.set_title(f"{MODEL_NAME} — Loss")
+    ax_loss.legend()
+    ax_loss.grid(True, alpha=0.3)
+
+    ax_iou.plot(epochs, [r["miou"] for r in history], label="mIoU", linewidth=2)
+    for i in range(NUM_CLASSES):
+        ax_iou.plot(epochs, [r[f"iou_c{i}"] for r in history], label=f"c{i}", alpha=0.5)
+    ax_iou.set_xlabel("Epoch")
+    ax_iou.set_ylabel("IoU")
+    ax_iou.set_title(f"{MODEL_NAME} — IoU")
+    ax_iou.legend(fontsize=8)
+    ax_iou.grid(True, alpha=0.3)
+
+    fig.tight_layout()
+    plot_path = os.path.join(logs_dir, f"{MODEL_NAME}_training.png")
+    fig.savefig(plot_path, dpi=150)
+    plt.close(fig)
+    log.info(f"Training plot saved to {plot_path}")
+
+    # ── Save final checkpoint ────────────────────────────────────────────
     _, state = nnx.split(model)
-    ckpt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "checkpoints", MODEL_NAME)
+    ckpt_path = os.path.join(base_dir, "checkpoints", MODEL_NAME, "final")
     with ocp.StandardCheckpointer() as checkpointer:
         checkpointer.save(ckpt_path, state)
-    log.info(f"Checkpoint saved to {ckpt_path}")
+    log.info(f"Final checkpoint saved to {ckpt_path}")
 
 
 if __name__ == "__main__":

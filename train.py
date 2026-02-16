@@ -180,7 +180,7 @@ def main():
                 "checkpoints", MODEL_NAME, f"epoch_{epoch}",
             )
             with ocp.StandardCheckpointer() as checkpointer:
-                checkpointer.save(ckpt_path, state)
+                checkpointer.save(ckpt_path, state, force=True)
             log.info(f"Checkpoint saved to {ckpt_path}")
 
     # ── Save metrics CSV ─────────────────────────────────────────────────
@@ -225,7 +225,7 @@ def main():
     _, state = nnx.split(model)
     ckpt_path = os.path.join(base_dir, "checkpoints", MODEL_NAME, "final")
     with ocp.StandardCheckpointer() as checkpointer:
-        checkpointer.save(ckpt_path, state)
+        checkpointer.save(ckpt_path, state, force=True)
     log.info(f"Final checkpoint saved to {ckpt_path}")
 
 

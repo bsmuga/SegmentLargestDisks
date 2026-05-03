@@ -2,6 +2,7 @@
 
 import csv
 import os
+import tomllib
 from typing import Literal
 os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.80"
 
@@ -16,9 +17,7 @@ import orbax.checkpoint as ocp
 
 from dataset import make_dataset, batched_iterator
 from logger import get_logger
-from models import create_model
-
-log = get_logger("train")
+from models import MODELS, create_model
 
 # ── Hyperparameters ──────────────────────────────────────────────────────────
 NUM_SAMPLES = 5000
@@ -28,11 +27,29 @@ NUM_LABELED = 25
 MAX_LABELS = 5
 NUM_CLASSES = MAX_LABELS + 1  # 0=background + 1..5 labels
 
-BATCH_SIZE = 1
-LEARNING_RATE = 1e-3
-NUM_EPOCHS = 100
+BATCH_SIZE = 8
 SEED = 42
 MODEL_NAME: Literal["unet", "vit"] = "vit"
+
+# Per-model training settings live in conf/<model>.toml. Each registered
+# model in MODELS must have a matching file with `learning_rate` and `num_epochs`.
+_CONF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "conf")
+_missing = sorted(
+    name for name in MODELS
+    if not os.path.isfile(os.path.join(_CONF_DIR, f"{name}.toml"))
+)
+if _missing:
+    raise FileNotFoundError(
+        f"Missing config files for registered models: {_missing}. "
+        f"Each model in MODELS must have a corresponding conf/<model>.toml."
+    )
+
+with open(os.path.join(_CONF_DIR, f"{MODEL_NAME}.toml"), "rb") as _f:
+    _cfg = tomllib.load(_f)
+LEARNING_RATE = _cfg["learning_rate"]
+NUM_EPOCHS = _cfg["num_epochs"]
+
+log = get_logger("train", subdir=MODEL_NAME)
 
 
 def dice_loss(logits: jnp.ndarray, labels: jnp.ndarray, num_classes: int, smooth: float = 1.0) -> jnp.ndarray:
@@ -92,6 +109,11 @@ def eval_step(model, images):
 
 
 def main():
+    log.info(
+        f"Model={MODEL_NAME} | learning_rate={LEARNING_RATE} | "
+        f"num_epochs={NUM_EPOCHS} | batch_size={BATCH_SIZE}"
+    )
+
     log.info("Generating dataset...")
     images, masks = make_dataset(
         num_samples=NUM_SAMPLES,
@@ -185,9 +207,9 @@ def main():
 
     # ── Save metrics CSV ─────────────────────────────────────────────────
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    logs_dir = os.path.join(base_dir, "logs")
+    logs_dir = os.path.join(base_dir, "logs", MODEL_NAME)
     os.makedirs(logs_dir, exist_ok=True)
-    csv_path = os.path.join(logs_dir, f"{MODEL_NAME}_metrics.csv")
+    csv_path = os.path.join(logs_dir, "metrics.csv")
     with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=history[0].keys())
         writer.writeheader()
@@ -216,7 +238,7 @@ def main():
     ax_iou.grid(True, alpha=0.3)
 
     fig.tight_layout()
-    plot_path = os.path.join(logs_dir, f"{MODEL_NAME}_training.png")
+    plot_path = os.path.join(logs_dir, "training.png")
     fig.savefig(plot_path, dpi=150)
     plt.close(fig)
     log.info(f"Training plot saved to {plot_path}")

@@ -1,6 +1,7 @@
 """Evaluate a trained UNet checkpoint: compute metrics and visualize predictions."""
 
 import argparse
+import os
 
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
@@ -146,7 +147,8 @@ def main():
     args = parser.parse_args()
 
     if args.checkpoint is None:
-        args.checkpoint = f"checkpoints/{args.model}"
+        args.checkpoint = f"checkpoints/{args.model}/final"
+    args.checkpoint = os.path.abspath(args.checkpoint)
     if args.save_path is None:
         args.save_path = f"evaluation_{args.model}.png"
 

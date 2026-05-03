@@ -33,7 +33,7 @@ class _TeeStream:
 _log_file_handle = None
 
 
-def get_logger(name: str) -> logging.Logger:
+def get_logger(name: str, subdir: str | None = None) -> logging.Logger:
     """Return a logger that writes to console and a timestamped file in logs/.
 
     On the first call, stdout and stderr are redirected so that *all* console
@@ -43,6 +43,9 @@ def get_logger(name: str) -> logging.Logger:
     ----------
     name : str
         Logger name (typically __name__ or the script name).
+    subdir : str or None
+        If provided, the log file is placed in ``logs/<subdir>/`` instead of
+        ``logs/``. Useful for partitioning per-model runs.
     """
     global _log_file_handle
 
@@ -54,6 +57,8 @@ def get_logger(name: str) -> logging.Logger:
     logger.setLevel(logging.DEBUG)
 
     log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+    if subdir is not None:
+        log_dir = os.path.join(log_dir, subdir)
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = os.path.join(log_dir, f"{name}_{timestamp}.log")

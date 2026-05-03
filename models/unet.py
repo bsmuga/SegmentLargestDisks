@@ -95,3 +95,4 @@ class UNet(nnx.Module):
 
         # Head
         return self.head(x)
+
